@@ -41,6 +41,35 @@ export function HistoryList({
 		setSessions((prev) => prev.filter((s) => s.id !== id))
 	}
 
+	/**
+	 * 计算会话的总 tokens 使用量
+	 * @param session 会话记录
+	 * @returns 总 tokens 数
+	 */
+	const calculateTotalTokens = (session: SessionRecord): number => {
+		return session.history.reduce((total, event) => {
+			if ('usage' in event && event.usage) {
+				return total + (event.usage.totalTokens || 0)
+			}
+			return total
+		}, 0)
+	}
+
+	/**
+	 * 格式化 tokens 数量，使其显示为更友好的格式
+	 * @param tokens tokens 数量
+	 * @returns 格式化后的 tokens 字符串
+	 */
+	const formatTokens = (tokens: number): string => {
+		if (tokens >= 1000000) {
+			return `${(tokens / 1000000).toFixed(1)}M`
+		}
+		if (tokens >= 1000) {
+			return `${(tokens / 1000).toFixed(1)}k`
+		}
+		return tokens.toString()
+	}
+
 	return (
 		<div className="flex flex-col h-screen bg-background">
 			{/* Header */}
@@ -98,9 +127,12 @@ export function HistoryList({
 						{/* Content */}
 						<div className="flex-1 min-w-0">
 							<p className="text-xs font-medium truncate">{session.task}</p>
-							<p className="text-[10px] text-muted-foreground mt-0.5">
-								{timeAgo(session.createdAt)} · {session.history.length} steps
-							</p>
+							<div className="flex items-center justify-between text-[10px] text-muted-foreground mt-0.5">
+								<span>
+									{timeAgo(session.createdAt)} · {session.history.length} steps
+								</span>
+								<span>{formatTokens(calculateTotalTokens(session))} tokens</span>
+							</div>
 						</div>
 
 						{/* Delete */}

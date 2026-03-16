@@ -154,8 +154,31 @@ function extractPrompt(rawRequest: unknown, role: 'system' | 'user'): string | n
 	return typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2)
 }
 
+/**
+ * 格式化 tokens 数量，使其显示为更友好的格式
+ * @param tokens tokens 数量
+ * @returns 格式化后的 tokens 字符串
+ */
+function formatTokens(tokens: number): string {
+	if (tokens >= 1000000) {
+		return `${(tokens / 1000000).toFixed(1)}M`
+	}
+	if (tokens >= 1000) {
+		return `${(tokens / 1000).toFixed(1)}k`
+	}
+	return tokens.toString()
+}
+
 // Raw request/response section (collapsible tabs, for debugging)
-function RawSection({ rawRequest, rawResponse }: { rawRequest?: unknown; rawResponse?: unknown }) {
+function RawSection({
+	rawRequest,
+	rawResponse,
+	usage,
+}: {
+	rawRequest?: unknown
+	rawResponse?: unknown
+	usage?: { promptTokens: number; completionTokens: number; totalTokens: number }
+}) {
 	const [activeTab, setActiveTab] = useState<'request' | 'response' | null>(null)
 
 	if (!rawRequest && !rawResponse) return null
@@ -200,6 +223,11 @@ function RawSection({ rawRequest, rawResponse }: { rawRequest?: unknown; rawResp
 					>
 						Raw Response
 					</button>
+				)}
+				{usage && (
+					<div className="text-[10px] mt-0.5 transition-colors ml-auto">
+						{formatTokens(usage.totalTokens)} tokens
+					</div>
 				)}
 			</div>
 			{content != null && (
@@ -260,7 +288,11 @@ function StepCard({ event }: { event: AgentStepEvent }) {
 			)}
 
 			{/* Raw Response */}
-			<RawSection rawRequest={event.rawRequest} rawResponse={event.rawResponse} />
+			<RawSection
+				rawRequest={event.rawRequest}
+				rawResponse={event.rawResponse}
+				usage={event.usage}
+			/>
 		</div>
 	)
 }
